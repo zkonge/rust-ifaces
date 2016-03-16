@@ -1,8 +1,8 @@
 use libc::{c_void, c_char, c_int, c_uint};
-use std::{mem, net, ptr};
+use std::{mem, ptr};
 use nix::sys::socket;
 
-use std::net::IpAddr;
+use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
 // nix doesn't have this const
 pub const AF_PACKET: i32 = 17;
@@ -62,43 +62,40 @@ extern "C" {
     pub fn freeifaddrs (ifa: *mut ifaddrs) -> c_void;
 }
 
-pub fn convert_sockaddr (sa: *mut socket::sockaddr) -> Option<net::SocketAddr> {
+pub fn convert_sockaddr (sa: *mut socket::sockaddr) -> Option<SocketAddr> {
     if sa == ptr::null_mut() { return None; }
 
-    let (addr, port) = match unsafe { *sa }.sa_family as i32 {
+    match unsafe { *sa }.sa_family as i32 {
         socket::AF_INET => {
             let sa: *const socket::sockaddr_in = unsafe { mem::transmute(sa) };
             let sa = & unsafe { *sa };
-            let (addr, port) = (sa.sin_addr.s_addr, sa.sin_port);
-            (
-                IpAddr::V4(net::Ipv4Addr::new(
-                    ((addr & 0x000000FF) >>  0) as u8,
-                    ((addr & 0x0000FF00) >>  8) as u8,
-                    ((addr & 0x00FF0000) >> 16) as u8,
-                    ((addr & 0xFF000000) >> 24) as u8,
-                    )),
-                port
-            )
-        },
-        socket::AF_INET6 => {
-            let sa: *const socket::sockaddr_in6 = unsafe { mem::transmute(sa) };
-            let sa = & unsafe { *sa };
-            let (addr, port) = (sa.sin6_addr.s6_addr, sa.sin6_port);
-            (
-                IpAddr::V6(net::Ipv6Addr::new(
+            let addr: [u8; 4] = unsafe { mem::transmute(sa.sin_addr.s_addr) };
+            Some(SocketAddr::V4(SocketAddrV4::new(
+                Ipv4Addr::new(
                     addr[0],
                     addr[1],
                     addr[2],
                     addr[3],
-                    addr[4],
-                    addr[5],
-                    addr[6],
-                    addr[7],
-                    )),
-                port
-            )
+                ), sa.sin_port
+            )))
         },
-        _ => return None,
-    };
-    Some(net::SocketAddr::new(addr, port))
+        socket::AF_INET6 => {
+            let sa: *const socket::sockaddr_in6 = unsafe { mem::transmute(sa) };
+            let sa = & unsafe { *sa };
+            let addr: [u16; 8] = unsafe { mem::transmute(sa.sin6_addr.s6_addr) };
+            Some(SocketAddr::V6(SocketAddrV6::new(
+                Ipv6Addr::new(
+                    u16::from_be(addr[0]),
+                    u16::from_be(addr[1]),
+                    u16::from_be(addr[2]),
+                    u16::from_be(addr[3]),
+                    u16::from_be(addr[4]),
+                    u16::from_be(addr[5]),
+                    u16::from_be(addr[6]),
+                    u16::from_be(addr[7]),
+                ), sa.sin6_port, sa.sin6_flowinfo, sa.sin6_scope_id
+            )))
+        },
+        _ => None,
+    }
 }

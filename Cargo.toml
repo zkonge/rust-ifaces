@@ -1,18 +1,19 @@
 [package]
-
 name = "ifaces"
-version = "0.0.2"
+version = "0.0.3"
+description = "Rust bindings to retrieve network interface information"
 authors = [
     "David Levy <dlevy47>",
     "Steve Klabnik <steve@steveklabnik.com>",
-    "misuzu <bakalolka@gmail.com>"
+    "misuzu <bakalolka@gmail.com>",
+    "Ignacio Corderi <icorderi@msn.com>"
 ]
+keywords = ["ifaces", "unix", "network"]
+repository = "https://github.com/icorderi/rust-ifaces"
+homepage = "https://github.com/icorderi/rust-ifaces"
+readme = "README.md"
 license = "MIT"
 
 [dependencies]
 nix = "0.5.0"
 libc = "0.2.8"
-
-[[bin]]
-path = "src/bin/ifaces.rs"
-name = "ifaces"

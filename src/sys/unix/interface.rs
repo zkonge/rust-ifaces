@@ -40,7 +40,7 @@ pub struct Interface {
 
 impl Interface {
     /// Retrieve a list of interfaces on this system.
-    pub fn get_all () -> Result<Vec<Interface>, nix::errno::Errno> {
+    pub fn get_all() -> Result<Vec<Interface>, nix::errno::Errno> {
         let mut ifap: *mut ffi::ifaddrs = unsafe { mem::zeroed() };
         if unsafe { ffi::getifaddrs(&mut ifap as *mut _) } != 0 {
             return Err(nix::errno::Errno::last());
@@ -53,7 +53,7 @@ impl Interface {
                 ret.push(iface);
             }
 
-            //TODO: do something else maybe?
+            // TODO: do something else maybe?
             cur = unsafe { (*cur).ifa_next };
         }
 
@@ -63,11 +63,11 @@ impl Interface {
     }
 }
 
-fn convert_ifaddrs (ifa: *mut ffi::ifaddrs) -> Option<Interface> {
+fn convert_ifaddrs(ifa: *mut ffi::ifaddrs) -> Option<Interface> {
     let ifa = unsafe { &mut *ifa };
-    let name = match String::from_utf8(unsafe {
-        CStr::from_ptr(ifa.ifa_name)
-    }.to_bytes().to_vec()) {
+    let name = match String::from_utf8(unsafe { CStr::from_ptr(ifa.ifa_name) }
+        .to_bytes()
+        .to_vec()) {
         Ok(x) => x,
         Err(_) => return None,
     };
@@ -87,7 +87,8 @@ fn convert_ifaddrs (ifa: *mut ffi::ifaddrs) -> Option<Interface> {
 
     let mask = ffi::convert_sockaddr(ifa.ifa_netmask);
 
-    let hop = if ifa.ifa_flags & ffi::SIOCGIFFLAGS::IFF_BROADCAST as libc::c_uint == ffi::SIOCGIFFLAGS::IFF_BROADCAST as libc::c_uint {
+    let hop = if ifa.ifa_flags & ffi::SIOCGIFFLAGS::IFF_BROADCAST as libc::c_uint ==
+                 ffi::SIOCGIFFLAGS::IFF_BROADCAST as libc::c_uint {
         match ffi::convert_sockaddr(ifa.ifa_ifu.ifu_broadaddr()) {
             Some(x) => Some(NextHop::Broadcast(x)),
             None => None,

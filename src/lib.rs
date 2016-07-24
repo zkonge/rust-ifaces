@@ -1,8 +1,17 @@
 extern crate libc;
+#[cfg(not(windows))]
 extern crate nix;
+#[cfg(windows)]
+#[macro_use]
+extern crate bitflags;
+#[cfg(windows)]
+extern crate winapi;
 
-mod ffi;
+mod sys;
 
-pub mod interface;
+#[cfg(not(windows))]
+pub use sys::unix;
+#[cfg(windows)]
+pub use sys::windows;
 
-pub use interface::{Interface, Kind};
+pub use sys::local_ifaces;

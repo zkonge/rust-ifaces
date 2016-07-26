@@ -5,7 +5,7 @@ use std::{mem, net, ptr};
 use nix;
 use nix::sys::socket;
 
-use ffi;
+use sys::unix::ffi;
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Kind {

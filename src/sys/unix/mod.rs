@@ -1,7 +1,10 @@
+use std::io;
+use std::net::SocketAddr;
+
 mod ffi;
 mod interface;
 
-pub use interface::{Interface, Kind, NextHop};
+pub use sys::unix::interface::{Interface, Kind, NextHop};
 
 /// Query the local system for all interface addresses.
 pub fn local_ifaces() -> io::Result<Vec<SocketAddr>> {

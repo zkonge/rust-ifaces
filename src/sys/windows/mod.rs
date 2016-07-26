@@ -14,6 +14,7 @@ mod ffi;
 
 const PREALLOC_ADAPTERS_LEN: usize = 15 * 1024;
 
+/// Query the local system for all interface addresses.
 pub fn local_ifaces() -> io::Result<Vec<SocketAddr>> {
     let mut adapters_list = Vec::with_capacity(PREALLOC_ADAPTERS_LEN);
 

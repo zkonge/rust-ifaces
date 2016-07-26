@@ -1,11 +1,18 @@
 #[cfg(not(windows))]
-pub mod unix;
+mod unix;
 
 #[cfg(windows)]
-pub mod windows;
+mod windows;
 
 #[cfg(not(windows))]
-pub use unix::local_ifaces;
+pub use self::unix::{
+    Interface,
+    Kind,
+    NextHop,
+    local_ifaces
+};
 
 #[cfg(windows)]
-pub use windows::local_ifaces;
+pub use self::windows::{
+    local_ifaces
+};

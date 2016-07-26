@@ -1,6 +1,13 @@
 mod ffi;
 mod interface;
 
-pub mod interface;
+pub use interface::{Interface, Kind, NextHop};
 
-pub use interface::{Interface, Kind};
+/// Query the local system for all interface addresses.
+pub fn local_ifaces() -> io::Result<Vec<SocketAddr>> {
+    let iface_iter = try!(Interface::get_all()).into_iter();
+    
+    Ok(iface_iter.filter(|iface| iface.kind != Kind::Packet)
+        .filter_map(|iface| iface.addr)
+        .collect())
+}

@@ -25,6 +25,9 @@ pub struct Interface {
     /// The name of this interface.
     pub name: String,
 
+    /// The index of this interface.
+    pub index: u32,
+
     /// The kind of interface this is.
     pub kind: Kind,
 
@@ -72,6 +75,8 @@ fn convert_ifaddrs(ifa: *mut ffi::ifaddrs) -> Option<Interface> {
         Err(_) => return None,
     };
 
+    let index = unsafe{ if_nametoindex(ifa.ifa_name) };
+
     let kind = if ifa.ifa_addr != ptr::null_mut() {
         match unsafe { *ifa.ifa_addr }.sa_family as i32 {
             ffi::AF_PACKET => Kind::Packet,
@@ -102,6 +107,7 @@ fn convert_ifaddrs(ifa: *mut ffi::ifaddrs) -> Option<Interface> {
 
     Some(Interface {
         name: name,
+        index: index,
         kind: kind,
         addr: addr,
         mask: mask,

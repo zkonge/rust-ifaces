@@ -60,6 +60,7 @@ pub struct ifaddrs {
 extern "C" {
     pub fn getifaddrs(ifap: *mut *mut ifaddrs) -> c_int;
     pub fn freeifaddrs(ifa: *mut ifaddrs) -> c_void;
+    pub fn if_nametoindex(ifname: *const c_char) -> c_uint;
 }
 
 pub fn convert_sockaddr(sa: *mut socket::sockaddr) -> Option<SocketAddr> {

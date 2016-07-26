@@ -96,7 +96,7 @@ pub struct IpAdapterUnicastAddress {
     pub address: SOCKET_ADDRESS,
     prefix_origin: IpPrefixOrigin,
     suffix_origin: IpSuffixOrigin,
-    dad_state: IpDadState,
+    pub dad_state: IpDadState,
     valid_lifetime: ULONG,
     preferred_lifetime: ULONG,
     lease_lifetime: ULONG,
@@ -187,6 +187,7 @@ pub enum IpSuffixOrigin {
     IpSuffixOriginUnchanged = 16,
 }
 
+#[derive(PartialEq, Eq)]
 #[repr(C)]
 pub enum IpDadState {
     IpDadStateInvalid = 0,

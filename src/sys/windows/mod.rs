@@ -3,7 +3,7 @@ use std::io;
 use std::net::{SocketAddr, SocketAddrV6, Ipv4Addr, SocketAddrV4};
 use std::mem;
 
-use sys::windows::ffi::{IpAdapterAddresses, IpAdapterUnicastAddress};
+use sys::windows::ffi::{IpAdapterAddresses, IpAdapterUnicastAddress, IpDadState};
 
 use winapi::winerror::{ERROR_SUCCESS, ERROR_ADDRESS_NOT_ASSOCIATED, ERROR_BUFFER_OVERFLOW,
                        ERROR_INVALID_PARAMETER, ERROR_NOT_ENOUGH_MEMORY, ERROR_NO_DATA};
@@ -30,19 +30,23 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
 
     while adapter_addr != ptr::null() {
         let curr_adapter_addr = &*adapter_addr;
-
+        
         let mut unicast_addr = curr_adapter_addr.all.first_unicast_address;
         while unicast_addr != ptr::null() {
             let curr_unicast_addr = &*unicast_addr;
 
-            if is_ipv4_enabled(&curr_unicast_addr) {
-                adapter_addresses.push(SocketAddr::V4(v4_socket_from_adapter(&curr_unicast_addr)));
-            } else if is_ipv6_enabled(&curr_unicast_addr) {
-                let mut v6_sock = v6_socket_from_adapter(&curr_unicast_addr);
-                // Make sure the scope id is set for ALL interfaces, not just link-local
-                v6_sock.set_scope_id(curr_adapter_addr.xp.ipv6_if_index);
+            // For some reason, some IpDadState::IpDadStateDeprecated addresses are return
+            // These contain BOGUS interface indices and will cause problesm if used
+            if curr_unicast_addr.dad_state != IpDadState::IpDadStateDeprecated {
+                if is_ipv4_enabled(&curr_unicast_addr) {
+                    adapter_addresses.push(SocketAddr::V4(v4_socket_from_adapter(&curr_unicast_addr)));
+                } else if is_ipv6_enabled(&curr_unicast_addr) {
+                    let mut v6_sock = v6_socket_from_adapter(&curr_unicast_addr);
+                    // Make sure the scope id is set for ALL interfaces, not just link-local
+                    v6_sock.set_scope_id(curr_adapter_addr.xp.ipv6_if_index);
 
-                adapter_addresses.push(SocketAddr::V6(v6_sock));
+                    adapter_addresses.push(SocketAddr::V6(v6_sock));
+                }
             }
 
             unicast_addr = curr_unicast_addr.next;

@@ -1,13 +1,26 @@
 use libc::{c_void, c_char, c_int, c_uint};
-use std::{mem, ptr};
 use nix::sys::socket;
 
+
+use std::{mem, ptr};
 use std::net::{SocketAddr, SocketAddrV4, SocketAddrV6, Ipv4Addr, Ipv6Addr};
 
-// nix doesn't have this const
-pub const AF_PACKET: i32 = 17;
 
-#[allow(dead_code)]
+pub const AF_INET: i32 = ::nix::sys::socket::AF_INET;
+pub const AF_INET6: i32 = ::nix::sys::socket::AF_INET6;
+
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+pub const AF_LINK: i32 = ::nix::libc::AF_LINK;
+#[cfg(any(target_os = "macos", target_os = "ios", target_os = "freebsd", target_os = "openbsd", target_os = "netbsd"))]
+pub const AF_PACKET: i32 = -1;
+
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub const AF_LINK: i32 = -1;
+#[cfg(any(target_os = "linux", target_os = "android"))]
+pub const AF_PACKET: i32 = ::nix::libc::AF_PACKET;
+
+
+#[allow(dead_code, non_camel_case_types)]
 #[repr(C)]
 pub enum SIOCGIFFLAGS {
     IFF_UP = 0x1,		/* Interface is up.  */
@@ -66,7 +79,7 @@ pub fn convert_sockaddr (sa: *mut socket::sockaddr) -> Option<SocketAddr> {
     if sa == ptr::null_mut() { return None; }
 
     match unsafe { *sa }.sa_family as i32 {
-        socket::AF_INET => {
+        AF_INET => {
             let sa: *const socket::sockaddr_in = unsafe { mem::transmute(sa) };
             let sa = & unsafe { *sa };
             let addr: [u8; 4] = unsafe { mem::transmute(sa.sin_addr.s_addr) };
@@ -79,7 +92,7 @@ pub fn convert_sockaddr (sa: *mut socket::sockaddr) -> Option<SocketAddr> {
                 ), sa.sin_port
             )))
         },
-        socket::AF_INET6 => {
+        AF_INET6 => {
             let sa: *const socket::sockaddr_in6 = unsafe { mem::transmute(sa) };
             let sa = & unsafe { *sa };
             let addr: [u16; 8] = unsafe { mem::transmute(sa.sin6_addr.s6_addr) };

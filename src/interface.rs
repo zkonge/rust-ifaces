@@ -1,17 +1,18 @@
 use libc;
+use nix;
+use ffi;
+
 use std::ffi::CStr;
 use std::{mem, net, ptr};
 
-use nix;
-use nix::sys::socket;
-
-use ffi;
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum Kind {
     Packet,
+    Link,
     Ipv4,
     Ipv6,
+    Unknow(i32)
 }
 
 #[derive(PartialEq, Eq, Debug)]
@@ -52,7 +53,6 @@ impl Interface {
             if let Some(iface) = convert_ifaddrs(cur) {
                 ret.push(iface);
             }
-
             //TODO: do something else maybe?
             cur = unsafe { (*cur).ifa_next };
         }
@@ -75,9 +75,10 @@ fn convert_ifaddrs (ifa: *mut ffi::ifaddrs) -> Option<Interface> {
     let kind = if ifa.ifa_addr != ptr::null_mut() {
         match unsafe { *ifa.ifa_addr }.sa_family as i32 {
             ffi::AF_PACKET => Kind::Packet,
-            socket::AF_INET => Kind::Ipv4,
-            socket::AF_INET6 => Kind::Ipv6,
-            _ => return None,
+            ffi::AF_LINK   => Kind::Link,
+            ffi::AF_INET   => Kind::Ipv4,
+            ffi::AF_INET6  => Kind::Ipv6,
+            code @ _       => Kind::Unknow(code)
         }
     } else {
         return None;

@@ -38,3 +38,8 @@ Example
     }
 
 
+Thanks
+---------
+
+*   `dlevy47 <https://github.com/dlevy47/rust-interfaces>`_ , Origin (Support Linux OS)
+*   `GGist <https://github.com/GGist/rust-ifaces>`_ , Support Windows OS.

@@ -2,6 +2,8 @@ Rust bindings to retrieve network interface information
 ======================================================================
 
 :Date: 10/10 2017
+:RustVersion: nightly
+
 
 .. contents::
 
@@ -11,6 +13,15 @@ OS Support
 
 *   Windows
 *   Unix-Like( BSD-Like, XNU, Linux )
+
+
+Run
+-------
+
+.. code:: bash
+    
+    git clone https://github.com/LuoZijun/rust-ifaces.git
+    cargo run --example ifaces
 
 
 Example
@@ -36,6 +47,7 @@ Example
             Err(_) => println!("Ooops ...")
         };
     }
+
 
 
 Thanks

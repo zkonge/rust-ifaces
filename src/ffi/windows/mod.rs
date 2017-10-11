@@ -340,7 +340,8 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
                                     mask: None,
                                     hop: None,
                                 });
-                            }
+                            },
+                            _ => {}
                         }
                     }
                 },

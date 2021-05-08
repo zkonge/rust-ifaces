@@ -1,25 +1,26 @@
 [package]
 name = "ifaces"
-version = "0.1.0"
+version = "0.2.0"
 description = "Rust bindings to retrieve network interface information"
 authors = [
     "David Levy <dlevy47>",
     "Steve Klabnik <steve@steveklabnik.com>",
     "misuzu <bakalolka@gmail.com>",
     "Ignacio Corderi <icorderi@msn.com>",
-    "luozijun <luozijun.assistant@gmail.com>"
+    "luozijun <luozijun.assistant@gmail.com>",
+    "zkonge <zkonge@outlook.com>"
 ]
+edition = "2018"
 keywords = ["ifaces", "unix", "windows", "linux", "bsd", "network"]
-repository = "https://github.com/icorderi/rust-ifaces"
-homepage = "https://github.com/icorderi/rust-ifaces"
-readme = "README.md"
+repository = "https://github.com/zkonge/rust-ifaces"
+homepage = "https://github.com/zkonge/rust-ifaces"
+readme = "README.rst"
 license = "MIT"
 
 [target.'cfg(not(windows))'.dependencies]
-nix = "0.8"
-libc = "0.2.8"
+nix = "^0.20"
+libc = "^0.2"
 
 [target.'cfg(windows)'.dependencies]
-bitflags = "0.7.0"
-winapi = "0.2.8"
-
+bitflags = "^1.2"
+winapi = { version = "^0.3", features = ["basetsd", "guiddef", "minwindef", "winnt", "ws2def", "winerror", "ws2ipdef"] }

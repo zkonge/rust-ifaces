@@ -1,8 +1,8 @@
 Rust bindings to retrieve network interface information
 ======================================================================
 
-:Date: 10/10 2017
-:RustVersion: nightly
+:Date: 5/9 2021
+:RustVersion: stable
 
 
 .. contents::
@@ -20,7 +20,7 @@ Run
 
 .. code:: bash
     
-    git clone https://github.com/LuoZijun/rust-ifaces.git
+    git clone https://github.com/zkonge/rust-ifaces.git
     cargo run --example ifaces
 
 
@@ -30,13 +30,11 @@ Example
 .. code:: toml
     
     [dependencies]
-    ifaces = { git = "https://github.com/LuoZijun/rust-ifaces.git" }
+    ifaces = { git = "https://github.com/zkonge/rust-ifaces.git" }
 
 
 .. code:: rust
     
-    extern crate ifaces;
-
     fn main() {
         match ifaces::ifaces() {
             Ok(interfaces) => {

@@ -1,5 +1,3 @@
-extern crate ifaces;
-
 fn main() {
     match ifaces::ifaces() {
         Ok(interfaces) => {

@@ -14,7 +14,7 @@ edition = "2018"
 keywords = ["ifaces", "unix", "windows", "linux", "bsd", "network"]
 repository = "https://github.com/zkonge/rust-ifaces"
 homepage = "https://github.com/zkonge/rust-ifaces"
-readme = "README.rst"
+readme = "README.md"
 license = "MIT"
 
 [target.'cfg(not(windows))'.dependencies]

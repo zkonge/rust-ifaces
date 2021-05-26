@@ -4,7 +4,7 @@ fn main() {
             for interface in interfaces.iter() {
                 println!("Found Interface: {:?}", interface)
             }
-        },
-        Err(_) => println!("Ooops ...")
+        }
+        Err(_) => println!("Ooops ..."),
     };
 }

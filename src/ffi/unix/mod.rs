@@ -174,8 +174,8 @@ pub fn ifaces() -> Result<Vec<Interface>, Error> {
                     break;
                 }
 
-                let addr = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_addr }).map(|s|s.ip());
-                let mask = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_netmask }).map(|s|s.ip());
+                let addr = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_addr });
+                let mask = nix_socketaddr_to_sockaddr(unsafe { (*item).ifa_netmask });
                 let hop = unsafe {
                     if (*item).ifa_flags & SIOCGIFFLAGS::IFF_BROADCAST as std::os::raw::c_uint
                         == SIOCGIFFLAGS::IFF_BROADCAST as std::os::raw::c_uint

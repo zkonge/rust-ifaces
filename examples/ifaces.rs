@@ -1,7 +1,7 @@
 fn main() {
     match ifaces::ifaces() {
         Ok(interfaces) => {
-            for interface in interfaces.into_iter() {
+            for interface in interfaces.iter() {
                 println!("Found Interface: {:?}", interface)
             }
         },

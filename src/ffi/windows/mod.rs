@@ -1,20 +1,22 @@
 #![allow(unused, non_upper_case_globals)]
 
-use std::{mem, net::IpAddr};
-use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
-use std::{
-    convert::{TryFrom, TryInto},
-    io,
-};
-use std::{net::Ipv6Addr, ptr};
+use std::convert::TryFrom;
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::{io, mem, ptr};
 
 use bitflags::bitflags;
-
 use winapi::shared::basetsd::{UINT32, UINT8, ULONG64};
 use winapi::shared::guiddef::GUID;
 use winapi::shared::minwindef::{BYTE, DWORD, PULONG, ULONG};
-use winapi::shared::ws2def::SOCKET_ADDRESS;
+use winapi::shared::winerror::{
+    ERROR_ADDRESS_NOT_ASSOCIATED, ERROR_BUFFER_OVERFLOW, ERROR_INVALID_PARAMETER,
+    ERROR_NOT_ENOUGH_MEMORY, ERROR_NO_DATA, ERROR_SUCCESS,
+};
+use winapi::shared::ws2def::{AF_INET, AF_INET6, AF_UNSPEC, SOCKADDR_IN, SOCKET_ADDRESS};
+use winapi::shared::ws2ipdef::SOCKADDR_IN6;
 use winapi::um::winnt::{PCHAR, PVOID, PWCHAR, WCHAR};
+
+use crate::{Interface, Kind, NextHop};
 
 const MAX_ADAPTER_ADDRESS_LENGTH: usize = 8;
 const ZONE_INDICES_LENGTH: usize = 16;
@@ -24,16 +26,7 @@ const MAX_DNS_SUFFIX_STRING_LENGTH: usize = 256;
 pub const IP_ADAPTER_IPV4_ENABLED: DWORD = 0x0080;
 pub const IP_ADAPTER_IPV6_ENABLED: DWORD = 0x0100;
 
-use winapi::shared::winerror::{
-    ERROR_ADDRESS_NOT_ASSOCIATED, ERROR_BUFFER_OVERFLOW, ERROR_INVALID_PARAMETER,
-    ERROR_NOT_ENOUGH_MEMORY, ERROR_NO_DATA, ERROR_SUCCESS,
-};
-use winapi::shared::ws2def::{AF_INET, AF_INET6, AF_UNSPEC, SOCKADDR_IN};
-use winapi::shared::ws2ipdef::SOCKADDR_IN6;
-
 const PREALLOC_ADAPTERS_LEN: usize = 15 * 1024;
-
-use crate::{Interface, Kind, NextHop};
 
 #[link(name = "Iphlpapi")]
 extern "system" {
@@ -249,30 +242,39 @@ pub enum TunnelType {
     TunnelTypeIpHttps = 15,
 }
 
-unsafe fn v4_socket_from_adapter(unicast_addr: &IpAdapterUnicastAddress) -> Ipv4Addr {
+unsafe fn v4_socket_from_adapter(unicast_addr: &IpAdapterUnicastAddress) -> SocketAddrV4 {
     let socket_addr = &unicast_addr.address;
 
     let in_addr: SOCKADDR_IN = mem::transmute(*socket_addr.lpSockaddr);
     let sin_addr = in_addr.sin_addr.S_un.S_addr();
 
     #[allow(clippy::identity_op)]
-    Ipv4Addr::new(
-        (sin_addr >> 0) as u8,
-        (sin_addr >> 8) as u8,
-        (sin_addr >> 16) as u8,
-        (sin_addr >> 24) as u8,
+    SocketAddrV4::new(
+        Ipv4Addr::new(
+            (sin_addr >> 0) as u8,
+            (sin_addr >> 8) as u8,
+            (sin_addr >> 16) as u8,
+            (sin_addr >> 24) as u8,
+        ),
+        0,
     )
 }
 
-unsafe fn v6_socket_from_adapter(unicast_addr: &IpAdapterUnicastAddress) -> Ipv6Addr {
+unsafe fn v6_socket_from_adapter(unicast_addr: &IpAdapterUnicastAddress) -> SocketAddrV6 {
     let socket_addr = &unicast_addr.address;
 
     let sock_addr6: *const SOCKADDR_IN6 = mem::transmute(socket_addr.lpSockaddr);
     let in6_addr: SOCKADDR_IN6 = *sock_addr6;
 
     let sin6_addr = in6_addr.sin6_addr.u.Byte();
+    let v6_addr = (*sin6_addr).into();
 
-    Ipv6Addr::try_from(*sin6_addr).unwrap()
+    SocketAddrV6::new(
+        v6_addr,
+        0,
+        in6_addr.sin6_flowinfo,
+        *in6_addr.u.sin6_scope_id(),
+    )
 }
 
 unsafe fn local_ifaces_with_buffer(buffer: &mut Vec<u8>) -> io::Result<()> {
@@ -347,7 +349,7 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
                                 adapter_addresses.push(Interface {
                                     name: "".to_string(),
                                     kind: Kind::Ipv4,
-                                    addr: Some(IpAddr::V4(v4_socket_from_adapter(
+                                    addr: Some(SocketAddr::V4(v4_socket_from_adapter(
                                         &curr_unicast_addr,
                                     ))),
                                     mask: None,
@@ -357,11 +359,11 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
                             AF_INET6 => {
                                 let mut v6_sock = v6_socket_from_adapter(&curr_unicast_addr);
                                 // Make sure the scope id is set for ALL interfaces, not just link-local
-                                // v6_sock.set_scope_id(curr_adapter_addr.xp.ipv6_if_index);
+                                v6_sock.set_scope_id(curr_adapter_addr.xp.ipv6_if_index);
                                 adapter_addresses.push(Interface {
                                     name: "".to_string(),
                                     kind: Kind::Ipv6,
-                                    addr: Some(IpAddr::V6(v6_sock)),
+                                    addr: Some(SocketAddr::V6(v6_sock)),
                                     mask: None,
                                     hop: None,
                                 });
@@ -381,17 +383,14 @@ unsafe fn map_adapter_addresses(mut adapter_addr: *const IpAdapterAddresses) -> 
 }
 
 /// Query the local system for all interface addresses.
-pub fn ifaces() -> Result<Vec<Interface>, ::std::io::Error> {
+pub fn ifaces() -> io::Result<Vec<Interface>> {
     let mut adapters_list = Vec::with_capacity(PREALLOC_ADAPTERS_LEN);
     unsafe {
         match local_ifaces_with_buffer(&mut adapters_list) {
             Ok(_) => Ok(map_adapter_addresses(mem::transmute(
                 adapters_list.as_ptr(),
             ))),
-            Err(_) => Err(::std::io::Error::new(
-                ::std::io::ErrorKind::Other,
-                "Oh, no ...",
-            )),
+            Err(_) => Err(io::Error::new(io::ErrorKind::Other, "Oh, no ...")),
         }
     }
 }

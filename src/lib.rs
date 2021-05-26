@@ -1,7 +1,6 @@
 pub mod ffi;
 pub use ffi::ifaces;
 
-
 #[derive(PartialEq, Eq, Debug, Clone)]
 pub enum NextHop {
     Broadcast(std::net::SocketAddr),
@@ -14,15 +13,14 @@ pub enum Kind {
     Link,
     Ipv4,
     Ipv6,
-    Unknown
+    Unknown,
 }
 
 #[derive(Debug, Clone)]
 pub struct Interface {
     pub name: String,
     pub kind: Kind,
-    pub addr: Option<std::net::IpAddr>,
-    pub mask: Option<std::net::IpAddr>,
+    pub addr: Option<std::net::SocketAddr>,
+    pub mask: Option<std::net::SocketAddr>,
     pub hop: Option<NextHop>,
 }
-

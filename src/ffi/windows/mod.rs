@@ -1,7 +1,6 @@
-#![allow(unused, non_upper_case_globals)]
+#![allow(non_upper_case_globals)]
 
-use std::convert::TryFrom;
-use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
+use std::net::{Ipv4Addr, Ipv6Addr, SocketAddr, SocketAddrV4, SocketAddrV6};
 use std::{io, mem, ptr};
 
 use bitflags::bitflags;
@@ -16,14 +15,16 @@ use winapi::shared::ws2def::{AF_INET, AF_INET6, AF_UNSPEC, SOCKADDR_IN, SOCKET_A
 use winapi::shared::ws2ipdef::SOCKADDR_IN6;
 use winapi::um::winnt::{PCHAR, PVOID, PWCHAR, WCHAR};
 
-use crate::{Interface, Kind, NextHop};
+use crate::{Interface, Kind};
 
 const MAX_ADAPTER_ADDRESS_LENGTH: usize = 8;
 const ZONE_INDICES_LENGTH: usize = 16;
 const MAX_DHCPV6_DUID_LENGTH: usize = 130;
 const MAX_DNS_SUFFIX_STRING_LENGTH: usize = 256;
 
+#[allow(unused)]
 pub const IP_ADAPTER_IPV4_ENABLED: DWORD = 0x0080;
+#[allow(unused)]
 pub const IP_ADAPTER_IPV6_ENABLED: DWORD = 0x0100;
 
 const PREALLOC_ADAPTERS_LEN: usize = 15 * 1024;
@@ -181,6 +182,7 @@ bitflags! {
     }
 }
 
+#[allow(unused)]
 #[repr(C)]
 pub enum IpPrefixOrigin {
     IpPrefixOriginOther = 0,
@@ -191,6 +193,7 @@ pub enum IpPrefixOrigin {
     IpPrefixOriginUnchanged = 16,
 }
 
+#[allow(unused)]
 #[repr(C)]
 pub enum IpSuffixOrigin {
     IpSuffixOriginOther = 0,
@@ -202,6 +205,7 @@ pub enum IpSuffixOrigin {
     IpSuffixOriginUnchanged = 16,
 }
 
+#[allow(unused)]
 #[derive(PartialEq, Eq)]
 #[repr(C)]
 pub enum IpDadState {
@@ -212,6 +216,7 @@ pub enum IpDadState {
     IpDadStatePreferred,
 }
 
+#[allow(unused)]
 #[repr(C)]
 pub enum IfOperStatus {
     IfOperStatusUp = 1,
@@ -223,6 +228,7 @@ pub enum IfOperStatus {
     IfOperStatusLowerLayerDown = 7,
 }
 
+#[allow(unused)]
 #[repr(C)]
 pub enum NetIfConnectionType {
     NetIfConnectionDedicated = 1,
@@ -231,6 +237,7 @@ pub enum NetIfConnectionType {
     NetIfConnectionMaximum = 4,
 }
 
+#[allow(unused)]
 #[repr(C)]
 pub enum TunnelType {
     TunnelTypeNone = 0,
@@ -267,7 +274,7 @@ unsafe fn v6_socket_from_adapter(unicast_addr: &IpAdapterUnicastAddress) -> Sock
     let in6_addr: SOCKADDR_IN6 = *sock_addr6;
 
     let sin6_addr = in6_addr.sin6_addr.u.Byte();
-    let v6_addr = (*sin6_addr).into();
+    let v6_addr: Ipv6Addr = (*sin6_addr).into();
 
     SocketAddrV6::new(
         v6_addr,

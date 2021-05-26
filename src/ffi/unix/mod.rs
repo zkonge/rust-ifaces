@@ -1,10 +1,10 @@
-use nix::sys::socket::AddressFamily;
-
 use std::ffi::CStr;
 use std::io::{Error, ErrorKind};
+use std::net::IpAddr;
 use std::{net, ptr};
 
-use std::net::IpAddr;
+use libc::{sockaddr_in, sockaddr_in6};
+use nix::sys::socket::AddressFamily;
 
 use crate::{Interface, Kind, NextHop};
 
@@ -92,7 +92,7 @@ pub fn nix_socketaddr_to_sockaddr(sa: *mut nix::sys::socket::sockaddr) -> Option
     #[allow(clippy::identity_op)]
     let (addr, port) = match AddressFamily::from_i32(unsafe { *sa }.sa_family as i32)? {
         AF_INET => {
-            let sa = sa as *const libc::sockaddr_in;
+            let sa = sa as *const sockaddr_in;
             let sa = &unsafe { *sa };
 
             let (addr, port) = (sa.sin_addr.s_addr, sa.sin_port);
@@ -107,7 +107,7 @@ pub fn nix_socketaddr_to_sockaddr(sa: *mut nix::sys::socket::sockaddr) -> Option
             )
         }
         AF_INET6 => {
-            let sa = sa as *const libc::sockaddr_in6;
+            let sa = sa as *const sockaddr_in6;
             let sa = &unsafe { *sa };
             let (addr, port) = (sa.sin6_addr.s6_addr, sa.sin6_port);
             (
